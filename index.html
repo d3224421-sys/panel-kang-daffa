@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pterodactyl Clone Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #131a20; color: #e2e8f0; }
+        .sidebar-bg { background-color: #0b0f13; }
+        .panel-bg { background-color: #1a202c; }
+        .terminal-bg { background-color: #000000; font-family: 'Courier New', Courier, monospace; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a202c; }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <aside class="w-64 sidebar-bg flex flex-col hidden md:flex">
+        <div class="h-16 flex items-center px-6 border-b border-gray-800">
+            <span class="text-xl font-bold text-blue-500">PteroClone</span>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <button onclick="switchTab('console')" id="nav-console" class="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white">
+                Console
+            </button>
+            <button onclick="switchTab('files')" id="nav-files" class="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-gray-800 hover:text-white">
+                File Manager
+            </button>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen">
+        <header class="h-16 panel-bg border-b border-gray-800 flex items-center px-6">
+            <h1 class="text-lg font-semibold">Server-1 (Simulation)</h1>
+        </header>
+
+        <div class="flex-1 overflow-auto p-6">
+            
+            <div id="tab-console" class="block h-full">
+                <div class="panel-bg rounded-lg shadow-lg border border-gray-700 flex flex-col h-full">
+                    <div class="px-4 py-3 border-b border-gray-700 bg-gray-800 rounded-t-lg">
+                        <h2 class="text-sm font-medium">Terminal</h2>
+                    </div>
+                    <div id="terminal-output" class="flex-1 terminal-bg p-4 overflow-y-auto text-sm text-gray-300">
+                        <div class="text-green-400">System is ready. Type 'node index.js' to run your code, or 'help' for commands.</div>
+                    </div>
+                    <div class="bg-gray-800 p-2 rounded-b-lg border-t border-gray-700 flex">
+                        <span class="text-blue-400 px-3 py-2 font-mono">~$</span>
+                        <input type="text" id="terminal-input" class="flex-1 bg-transparent text-white font-mono focus:outline-none" autocomplete="off" placeholder="Enter a command...">
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-files" class="hidden h-full flex gap-4">
+                <div class="w-1/3 panel-bg rounded-lg shadow-lg border border-gray-700 overflow-hidden flex flex-col">
+                    <div class="px-4 py-3 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
+                        <h2 class="text-sm font-medium">/home/container</h2>
+                        <button onclick="createNewFile()" class="text-xs bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-white">New File</button>
+                    </div>
+                    <ul id="file-list" class="flex-1 overflow-y-auto p-2">
+                        </ul>
+                </div>
+                <div class="flex-1 panel-bg rounded-lg shadow-lg border border-gray-700 flex flex-col">
+                    <div class="px-4 py-3 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
+                        <h2 id="editor-title" class="text-sm font-medium">Editing: none</h2>
+                        <button onclick="saveFile()" class="text-xs bg-green-600 hover:bg-green-500 px-4 py-1 rounded text-white font-bold">Save</button>
+                    </div>
+                    <textarea id="file-editor" class="flex-1 bg-[#1e1e1e] text-gray-300 p-4 font-mono focus:outline-none resize-none" disabled placeholder="Select a file to edit..."></textarea>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- VIRTUAL FILE SYSTEM ---
+        let virtualFiles = {
+            'index.js': 'console.log("Hello from PteroClone!");\nconsole.log("Try editing me in the File Manager.");\n\nlet x = 10;\nlet y = 20;\nconsole.log("Calculated:", x + y);',
+            'package.json': '{\n  "name": "simulation-server",\n  "version": "1.0.0",\n  "scripts": {\n    "start": "node index.js"\n  }\n}'
+        };
+        let currentEditingFile = null;
+
+        // --- UI NAVIGATION ---
+        function switchTab(tabName) {
+            document.getElementById('tab-console').classList.add('hidden');
+            document.getElementById('tab-files').classList.add('hidden');
+            document.getElementById('nav-console').classList.replace('bg-blue-600', 'text-gray-400');
+            document.getElementById('nav-console').classList.remove('text-white');
+            document.getElementById('nav-files').classList.replace('bg-blue-600', 'text-gray-400');
+            document.getElementById('nav-files').classList.remove('text-white');
+
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            document.getElementById('nav-' + tabName).classList.add('bg-blue-600', 'text-white');
+            document.getElementById('nav-' + tabName).classList.remove('text-gray-400');
+
+            if(tabName === 'files') renderFileList();
+        }
+
+        // --- FILE MANAGER LOGIC ---
+        function renderFileList() {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '';
+            for (let filename in virtualFiles) {
+                let li = document.createElement('li');
+                li.className = "px-3 py-2 hover:bg-gray-700 cursor-pointer rounded flex items-center gap-2 text-sm";
+                li.innerHTML = `📄 ${filename}`;
+                li.onclick = () => openFile(filename);
+                list.appendChild(li);
+            }
+        }
+
+        function openFile(filename) {
+            currentEditingFile = filename;
+            document.getElementById('editor-title').innerText = `Editing: ${filename}`;
+            const editor = document.getElementById('file-editor');
+            editor.disabled = false;
+            editor.value = virtualFiles[filename];
+        }
+
+        function saveFile() {
+            if (!currentEditingFile) return;
+            const editor = document.getElementById('file-editor');
+            virtualFiles[currentEditingFile] = editor.value;
+            printToTerminal(`System: Saved changes to ${currentEditingFile}`, 'text-yellow-400');
+        }
+
+        function createNewFile() {
+            let filename = prompt("Enter new file name (e.g., bot.js):");
+            if (filename && !virtualFiles[filename]) {
+                virtualFiles[filename] = "";
+                renderFileList();
+                openFile(filename);
+            }
+        }
+
+        // --- TERMINAL SIMULATION LOGIC ---
+        const terminalInput = document.getElementById('terminal-input');
+        const terminalOutput = document.getElementById('terminal-output');
+
+        function printToTerminal(text, colorClass = "text-gray-300") {
+            const div = document.createElement('div');
+            div.className = colorClass;
+            div.innerText = text;
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight; // Auto-scroll
+        }
+
+        terminalInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const cmd = this.value.trim();
+                if (!cmd) return;
+                
+                // Echo the command
+                const echoDiv = document.createElement('div');
+                echoDiv.innerHTML = `<span class="text-blue-400">container@pteroclone:~$</span> ${cmd}`;
+                terminalOutput.appendChild(echoDiv);
+                
+                this.value = ''; // Clear input
+                processCommand(cmd);
+            }
+        });
+
+        function processCommand(cmd) {
+            const args = cmd.split(' ');
+            const mainCmd = args[0].toLowerCase();
+
+            switch (mainCmd) {
+                case 'help':
+                    printToTerminal("Available commands: node [file], npm [action], ls, cat [file], clear");
+                    break;
+                case 'clear':
+                    terminalOutput.innerHTML = '';
+                    break;
+                case 'ls':
+                    printToTerminal(Object.keys(virtualFiles).join('  '), "text-blue-300");
+                    break;
+                case 'cat':
+                    if (virtualFiles[args[1]]) {
+                        printToTerminal(virtualFiles[args[1]]);
+                    } else {
+                        printToTerminal(`cat: ${args[1]}: No such file or directory`, "text-red-400");
+                    }
+                    break;
+                case 'npm':
+                    // Simulate NPM
+                    if(args[1] === 'start') {
+                        printToTerminal("> simulation-server@1.0.0 start");
+                        printToTerminal("> node index.js");
+                        processCommand('node index.js'); // redirect to node
+                    } else if (args[1] === 'install') {
+                        printToTerminal("npm notice created a lockfile as package-lock.json.");
+                        printToTerminal(`added 42 packages, and audited 43 packages in 1.${Math.floor(Math.random()*900)}s`);
+                        printToTerminal("found 0 vulnerabilities", "text-green-400");
+                    } else {
+                        printToTerminal(`npm ERR! Unknown command: ${args[1]}`, "text-red-400");
+                    }
+                    break;
+                case 'node':
+                    // The core simulation: evaluate JS in the browser
+                    const filename = args[1];
+                    if (!filename) {
+                        printToTerminal("Usage: node <filename.js>", "text-red-400");
+                    } else if (virtualFiles[filename]) {
+                        runJavaScript(virtualFiles[filename]);
+                    } else {
+                        printToTerminal(`Error: Cannot find module '/home/container/${filename}'`, "text-red-400");
+                    }
+                    break;
+                default:
+                    printToTerminal(`bash: ${mainCmd}: command not found`, "text-red-400");
+            }
+        }
+
+        function runJavaScript(code) {
+            // Temporarily hijack console.log to print to our virtual terminal
+            const originalLog = console.log;
+            const originalError = console.error;
+            
+            console.log = function(...args) {
+                printToTerminal(args.join(' '));
+            };
+            console.error = function(...args) {
+                printToTerminal(args.join(' '), 'text-red-500');
+            };
+
+            try {
+                // Execute the code
+                // NOTE: eval() is generally dangerous, but here it's running client-side code written by the user themselves in a sandbox.
+                new Function(code)();
+            } catch (error) {
+                printToTerminal(error.toString(), "text-red-500");
+            } finally {
+                // Restore the real console
+                console.log = originalLog;
+                console.error = originalError;
+            }
+        }
+    </script>
+</body>
+</html>
