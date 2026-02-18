@@ -3,286 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobile PteroClone</title>
+    <title>PteroClone Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #131a20; color: #e2e8f0; overscroll-behavior: none; }
-        .panel-bg { background-color: #1a202c; }
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f13; color: #e2e8f0; }
+        .active-tab { border-bottom: 3px solid #3b82f6; color: #3b82f6; background-color: #1a202c; }
         .terminal-bg { background-color: #000000; font-family: 'Courier New', Courier, monospace; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 4px; }
-        
-        /* Smooth fade for tabs */
-        .tab-content { display: none; animation: fadeIn 0.2s ease-in-out; }
+        .tab-content { display: none; }
         .tab-content.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <header class="h-14 panel-bg border-b border-gray-800 flex justify-between items-center px-4 shrink-0">
-        <h1 class="text-base font-bold text-blue-400">PteroClone</h1>
-        <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400">Environment:</span>
-            <select id="node-version" class="bg-gray-800 text-xs text-white border border-gray-600 rounded px-2 py-1 focus:outline-none">
-                <option value="20">Node.js v20.x</option>
-                <option value="18">Node.js v18.x</option>
-            </select>
-        </div>
+    <header class="bg-[#1a202c] px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+        <span class="font-bold text-blue-500 uppercase tracking-widest text-sm">PteroClone</span>
+        <select id="node-version" class="bg-gray-900 text-xs border border-gray-700 rounded px-2 py-1">
+            <option>Node 20</option>
+            <option>Node 18</option>
+        </select>
     </header>
+
+    <nav class="flex bg-[#111827] border-b border-gray-800">
+        <button onclick="switchTab('console')" id="btn-console" class="flex-1 py-3 text-sm font-bold active-tab">
+            CONSOLE
+        </button>
+        <button onclick="switchTab('files')" id="btn-files" class="flex-1 py-3 text-sm font-bold text-gray-500">
+            FILES
+        </button>
+    </nav>
 
     <main class="flex-1 overflow-hidden relative">
         
-        <div id="tab-console" class="tab-content active flex-col h-full w-full p-2 gap-2">
-            
-            <div class="panel-bg rounded-lg border border-gray-700 p-2 flex gap-2 shrink-0">
-                <button onclick="powerAction('start')" class="flex-1 bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-2 rounded shadow">
-                    Start
-                </button>
-                <button onclick="powerAction('restart')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2 rounded shadow">
-                    Restart
-                </button>
-                <button onclick="powerAction('stop')" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-2 rounded shadow">
-                    Stop
-                </button>
+        <div id="tab-console" class="tab-content active flex-col h-full p-2">
+            <div class="flex gap-2 mb-2">
+                <button onclick="power('start')" class="flex-1 bg-green-600 py-3 rounded font-bold text-xs">START</button>
+                <button onclick="power('stop')" class="flex-1 bg-red-600 py-3 rounded font-bold text-xs">STOP</button>
             </div>
-
-            <div class="panel-bg rounded-lg border border-gray-700 flex flex-col flex-1 overflow-hidden">
-                <div class="px-3 py-2 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
-                    <h2 class="text-xs font-medium">Console Output</h2>
-                    <div id="server-status" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
-                </div>
-                <div id="terminal-output" class="flex-1 terminal-bg p-3 overflow-y-auto text-xs text-gray-300 break-words">
-                    <div class="text-gray-500">System is offline. Press Start to boot.</div>
-                </div>
-                <div class="bg-gray-800 p-2 border-t border-gray-700 flex items-center shrink-0">
-                    <span class="text-blue-400 pl-1 pr-2 font-mono text-xs">~$</span>
-                    <input type="text" id="terminal-input" class="flex-1 bg-transparent text-white font-mono text-xs focus:outline-none" autocomplete="off" placeholder="Enter command...">
-                </div>
+            <div class="flex-1 terminal-bg rounded border border-gray-700 overflow-y-auto p-3 text-[11px] leading-relaxed" id="out">
+                <div class="text-gray-500">System offline. Press START to boot Node 20.</div>
+            </div>
+            <div class="mt-2 flex bg-gray-900 border border-gray-700 p-2 rounded">
+                <span class="text-blue-500 mr-2 font-mono">❯</span>
+                <input type="text" id="in" class="bg-transparent flex-1 outline-none text-xs font-mono" placeholder="Command...">
             </div>
         </div>
 
-        <div id="tab-files" class="tab-content flex-col h-full w-full p-2 gap-2">
-            
-            <div class="panel-bg rounded-lg border border-gray-700 flex flex-col shrink-0 max-h-40">
-                <div class="px-3 py-2 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
-                    <h2 class="text-xs font-medium">/home/container</h2>
-                    <button onclick="createNewFile()" class="text-[10px] bg-blue-600 px-2 py-1 rounded text-white font-bold">New File</button>
+        <div id="tab-files" class="tab-content flex-col h-full p-2">
+            <div class="bg-[#1a202c] border border-gray-700 rounded mb-2">
+                <div class="p-2 border-b border-gray-700 text-[10px] font-bold text-gray-400 flex justify-between">
+                    FILESYSTEM
+                    <button onclick="addFile()" class="text-blue-400">+ NEW</button>
                 </div>
-                <ul id="file-list" class="overflow-y-auto p-1 text-sm">
-                    </ul>
+                <div id="file-list" class="p-1 max-h-32 overflow-y-auto"></div>
             </div>
-
-            <div class="flex-1 panel-bg rounded-lg border border-gray-700 flex flex-col overflow-hidden">
-                <div class="px-3 py-2 border-b border-gray-700 bg-gray-800 flex justify-between items-center shrink-0">
-                    <h2 id="editor-title" class="text-xs font-medium text-gray-400">Editing: none</h2>
-                    <button onclick="saveFile()" class="text-[10px] bg-green-600 px-3 py-1 rounded text-white font-bold">Save</button>
-                </div>
-                <textarea id="file-editor" class="flex-1 bg-[#1e1e1e] text-gray-300 p-3 font-mono text-xs focus:outline-none resize-none" disabled placeholder="Select a file from above to edit..."></textarea>
+            <div class="flex-1 bg-[#1a202c] border border-gray-700 rounded flex flex-col">
+                <div id="ed-name" class="p-2 text-[10px] border-b border-gray-700 text-yellow-500 italic">No file selected</div>
+                <textarea id="editor" class="flex-1 bg-black text-gray-300 p-3 font-mono text-xs outline-none" spellcheck="false"></textarea>
+                <button onclick="save()" class="bg-blue-600 p-2 text-xs font-bold">SAVE FILE</button>
             </div>
         </div>
 
     </main>
 
-    <nav class="h-14 bg-[#0b0f13] border-t border-gray-800 flex shrink-0">
-        <button onclick="switchTab('console')" id="nav-console" class="flex-1 flex flex-col items-center justify-center text-blue-500 transition-colors">
-            <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <span class="text-[10px] font-bold">Console</span>
-        </button>
-        <button onclick="switchTab('files')" id="nav-files" class="flex-1 flex flex-col items-center justify-center text-gray-500 hover:text-gray-300 transition-colors">
-            <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-            <span class="text-[10px] font-bold">Files</span>
-        </button>
-    </nav>
-
     <script>
-        // --- STATE ---
-        let isRunning = false;
-        let virtualFiles = {
-            'index.js': 'console.log("Starting server...");\nconsole.log("Hello from Mobile PteroClone!");\n\nsetTimeout(() => {\n  console.log("Ping! Server is running fine.");\n}, 2000);',
-            'package.json': '{\n  "name": "mobile-server",\n  "version": "1.0.0",\n  "scripts": {\n    "start": "node index.js"\n  }\n}'
+        let files = {'index.js': 'console.log("Node 20 running...");\nconsole.log("Hello World!");', 'package.json': '{}'};
+        let cur = null;
+        let running = false;
+
+        function switchTab(t) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.getElementById('tab-'+t).classList.add('active');
+            document.getElementById('btn-console').className = 'flex-1 py-3 text-sm font-bold ' + (t=='console'?'active-tab':'text-gray-500');
+            document.getElementById('btn-files').className = 'flex-1 py-3 text-sm font-bold ' + (t=='files'?'active-tab':'text-gray-500');
+            if(t=='files') listFiles();
+        }
+
+        function listFiles() {
+            const l = document.getElementById('file-list');
+            l.innerHTML = '';
+            for(let f in files) {
+                let d = document.createElement('div');
+                d.className = 'p-2 text-xs border-b border-gray-800 last:border-0';
+                d.innerText = '📄 ' + f;
+                d.onclick = () => {
+                    cur = f;
+                    document.getElementById('ed-name').innerText = 'Editing: ' + f;
+                    document.getElementById('editor').value = files[f];
+                };
+                l.appendChild(d);
+            }
+        }
+
+        function save() {
+            if(cur) {
+                files[cur] = document.getElementById('editor').value;
+                alert('Saved!');
+            }
+        }
+
+        function power(s) {
+            const out = document.getElementById('out');
+            if(s == 'start') {
+                running = true;
+                out.innerHTML += `<div class="text-green-500 mt-2">Container started! Running npm start...</div>`;
+                try {
+                    const code = files['index.js'];
+                    const logs = [];
+                    const fakeLog = (...args) => out.innerHTML += `<div>${args.join(' ')}</div>`;
+                    new Function('console', code)({log: fakeLog});
+                } catch(e) { out.innerHTML += `<div class="text-red-500">${e}</div>`; }
+            } else {
+                running = false;
+                out.innerHTML += `<div class="text-red-500 mt-2">Container stopped.</div>`;
+            }
+            out.scrollTop = out.scrollHeight;
+        }
+
+        document.getElementById('in').onkeydown = (e) => {
+            if(e.key == 'Enter') {
+                let v = e.target.value;
+                document.getElementById('out').innerHTML += `<div><span class="text-blue-500">❯</span> ${v}</div>`;
+                e.target.value = '';
+                if(v == 'ls') document.getElementById('out').innerHTML += `<div>${Object.keys(files).join(' ')}</div>`;
+            }
         };
-        let currentEditingFile = null;
-
-        // --- UI NAVIGATION ---
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabName).classList.add('active');
-
-            // Update icon colors
-            document.getElementById('nav-console').classList.replace('text-blue-500', 'text-gray-500');
-            document.getElementById('nav-files').classList.replace('text-blue-500', 'text-gray-500');
-            document.getElementById('nav-' + tabName).classList.replace('text-gray-500', 'text-blue-500');
-
-            if(tabName === 'files') renderFileList();
-        }
-
-        // --- POWER CONTROLS ---
-        function powerAction(action) {
-            const statusDot = document.getElementById('server-status');
-            const nodeVersion = document.getElementById('node-version').value;
-
-            if (action === 'start') {
-                if (isRunning) return printToTerminal("Server is already running!", "text-yellow-400");
-                isRunning = true;
-                statusDot.className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]";
-                printToTerminal(" ");
-                printToTerminal(`[Pterodactyl Daemon]: Starting server...`, "text-yellow-400 font-bold");
-                printToTerminal(`[Pterodactyl Daemon]: Loading Docker image (Node.js v${nodeVersion})...`, "text-gray-400");
-                setTimeout(() => processCommand('npm start'), 800);
-            } 
-            else if (action === 'stop') {
-                if (!isRunning) return printToTerminal("Server is already offline!", "text-yellow-400");
-                isRunning = false;
-                statusDot.className = "w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
-                printToTerminal("[Pterodactyl Daemon]: Container stopped.", "text-red-400 font-bold");
-            }
-            else if (action === 'restart') {
-                printToTerminal("[Pterodactyl Daemon]: Restarting server...", "text-blue-400 font-bold");
-                isRunning = false;
-                statusDot.className = "w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
-                setTimeout(() => powerAction('start'), 1000);
-            }
-        }
-
-        // --- FILE MANAGER LOGIC ---
-        function renderFileList() {
-            const list = document.getElementById('file-list');
-            list.innerHTML = '';
-            for (let filename in virtualFiles) {
-                let li = document.createElement('li');
-                li.className = "px-2 py-1.5 hover:bg-gray-700 cursor-pointer rounded flex items-center gap-2 text-gray-300";
-                li.innerHTML = `📄 ${filename}`;
-                li.onclick = () => openFile(filename);
-                list.appendChild(li);
-            }
-        }
-
-        function openFile(filename) {
-            currentEditingFile = filename;
-            document.getElementById('editor-title').innerText = `Editing: ${filename}`;
-            document.getElementById('editor-title').classList.replace('text-gray-400', 'text-white');
-            const editor = document.getElementById('file-editor');
-            editor.disabled = false;
-            editor.value = virtualFiles[filename];
-        }
-
-        function saveFile() {
-            if (!currentEditingFile) return;
-            const editor = document.getElementById('file-editor');
-            virtualFiles[currentEditingFile] = editor.value;
-            printToTerminal(`System: Saved changes to ${currentEditingFile}`, 'text-yellow-400');
-            // Give visual feedback on save button
-            const btn = event.target;
-            const oldText = btn.innerText;
-            btn.innerText = "Saved!";
-            btn.classList.replace('bg-green-600', 'bg-blue-500');
-            setTimeout(() => {
-                btn.innerText = oldText;
-                btn.classList.replace('bg-blue-500', 'bg-green-600');
-            }, 1000);
-        }
-
-        function createNewFile() {
-            let filename = prompt("Enter new file name (e.g., bot.js):");
-            if (filename && !virtualFiles[filename]) {
-                virtualFiles[filename] = "";
-                renderFileList();
-                openFile(filename);
-            }
-        }
-
-        // --- TERMINAL LOGIC ---
-        const terminalInput = document.getElementById('terminal-input');
-        const terminalOutput = document.getElementById('terminal-output');
-
-        function printToTerminal(text, colorClass = "text-gray-300") {
-            const div = document.createElement('div');
-            div.className = `py-0.5 ${colorClass}`;
-            div.innerText = text;
-            terminalOutput.appendChild(div);
-            terminalOutput.scrollTop = terminalOutput.scrollHeight;
-        }
-
-        terminalInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const cmd = this.value.trim();
-                if (!cmd) return;
-                
-                const echoDiv = document.createElement('div');
-                echoDiv.innerHTML = `<span class="text-blue-400">container@pteroclone:~$</span> ${cmd}`;
-                terminalOutput.appendChild(echoDiv);
-                
-                this.value = '';
-                processCommand(cmd);
-            }
-        });
-
-        function processCommand(cmd) {
-            const args = cmd.split(' ');
-            const mainCmd = args[0].toLowerCase();
-
-            switch (mainCmd) {
-                case 'clear':
-                    terminalOutput.innerHTML = '';
-                    break;
-                case 'ls':
-                    printToTerminal(Object.keys(virtualFiles).join('  '), "text-blue-300");
-                    break;
-                case 'npm':
-                    if (!isRunning) return printToTerminal("Error: Server is offline. Press Start first.", "text-red-400");
-                    if(args[1] === 'start') {
-                        printToTerminal("> mobile-server@1.0.0 start");
-                        printToTerminal("> node index.js");
-                        processCommand('node index.js');
-                    } else if (args[1] === 'install') {
-                        printToTerminal("npm notice created a lockfile as package-lock.json.");
-                        printToTerminal(`added 12 packages in 0.${Math.floor(Math.random()*900)}s`);
-                    } else {
-                        printToTerminal(`npm ERR! Unknown command: ${args[1]}`, "text-red-400");
-                    }
-                    break;
-                case 'node':
-                    if (!isRunning) return printToTerminal("Error: Server is offline. Press Start first.", "text-red-400");
-                    const filename = args[1];
-                    if (!filename) {
-                        printToTerminal("Usage: node <filename.js>", "text-red-400");
-                    } else if (virtualFiles[filename]) {
-                        runJavaScript(virtualFiles[filename]);
-                    } else {
-                        printToTerminal(`Error: Cannot find module '/home/container/${filename}'`, "text-red-400");
-                    }
-                    break;
-                default:
-                    printToTerminal(`bash: ${mainCmd}: command not found`, "text-red-400");
-            }
-        }
-
-        function runJavaScript(code) {
-            const originalLog = console.log;
-            const originalError = console.error;
-            
-            console.log = function(...args) {
-                if (isRunning) printToTerminal(args.join(' '));
-            };
-            console.error = function(...args) {
-                if (isRunning) printToTerminal(args.join(' '), 'text-red-500');
-            };
-
-            try {
-                // Allows using basic async/await in the browser sandbox
-                const asyncWrapper = `(async () => { ${code} })()`;
-                eval(asyncWrapper);
-            } catch (error) {
-                printToTerminal(error.toString(), "text-red-500");
-            } finally {
-                setTimeout(() => {
-                    console.log = originalLog;
-                    console.error = originalError;
-                }, 100); // Small buffer for async logs
-            }
-        }
     </script>
 </body>
 </html>
