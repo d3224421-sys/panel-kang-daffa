@@ -1,165 +1,496 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PteroClone Mobile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0b0f13; color: #e2e8f0; }
-        .active-tab { border-bottom: 4px solid #3b82f6; color: #3b82f6; background-color: #1a202c; }
-        .terminal-bg { background-color: #000000; font-family: 'Courier New', Courier, monospace; }
-        .tab-content { display: none; height: calc(100vh - 110px); }
-        .tab-content.active { display: flex; flex-direction: column; }
-        /* Prevent zoom on input for mobile */
-        input, textarea { font-size: 16px !important; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>is your name its my fake frends list?</title>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Syne:wght@400;700;800&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --accent: #ff2d55;
+    --text: #f0f0f0;
+    --muted: #555570;
+    --glow: 0 0 30px rgba(255,45,85,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(255,45,85,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(255,159,10,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .noise {
+    position: fixed;
+    inset: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  #app {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 600px;
+    padding: 24px;
+  }
+
+  .site-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+    display: block;
+    border-left: 2px solid var(--accent);
+    padding-left: 10px;
+    animation: slideIn 0.6s ease 0.1s both;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: #1e1e2e;
+    border-radius: 2px;
+    margin-bottom: 32px;
+    overflow: hidden;
+    animation: slideIn 0.6s ease 0.2s both;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(255,45,85,0.6);
+  }
+
+  .question-counter {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 10px;
+    animation: slideIn 0.6s ease 0.2s both;
+  }
+
+  .question-text {
+    font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+    font-weight: 800;
+    line-height: 1.35;
+    margin-bottom: 30px;
+    animation: slideIn 0.6s ease 0.3s both;
+  }
+
+  .question-text span { color: var(--accent); }
+
+  .answers-grid {
+    display: grid;
+    gap: 11px;
+    animation: slideIn 0.6s ease 0.4s both;
+  }
+
+  .answer-btn {
+    background: var(--card);
+    border: 1px solid #1e1e2e;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 16px 22px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .answer-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 0.18s ease;
+    transform-origin: bottom;
+  }
+
+  .answer-btn:hover:not(.dim):not(.correct):not(.wrong) {
+    border-color: var(--accent);
+    background: #1a1a25;
+    transform: translateX(5px);
+    box-shadow: var(--glow);
+  }
+  .answer-btn:hover:not(.dim):not(.correct):not(.wrong)::before { transform: scaleY(1); }
+
+  .answer-btn.correct {
+    border-color: #30d158;
+    background: rgba(48,209,88,0.08);
+    color: #30d158;
+    pointer-events: none;
+  }
+  .answer-btn.wrong {
+    border-color: var(--accent);
+    background: rgba(255,45,85,0.1);
+    color: var(--accent);
+    animation: shake 0.4s ease;
+    pointer-events: none;
+  }
+  .answer-btn.dim { pointer-events: none; opacity: 0.3; }
+
+  .feedback-msg {
+    margin-top: 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    padding: 13px 16px;
+    border-radius: 8px;
+    display: none;
+    line-height: 1.6;
+  }
+  .feedback-msg.show { display: block; animation: fadeIn 0.3s ease; }
+  .feedback-msg.good { background: rgba(48,209,88,0.08); border: 1px solid #30d158; color: #30d158; }
+
+  .next-btn {
+    margin-top: 18px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 14px 28px;
+    border-radius: 9px;
+    cursor: pointer;
+    display: none;
+    letter-spacing: 0.04em;
+    transition: all 0.18s ease;
+  }
+  .next-btn:hover { background: #ff1a42; transform: translateY(-2px); box-shadow: var(--glow); }
+  .next-btn.show { display: inline-block; animation: fadeIn 0.3s ease; }
+
+  /* OVERLAY (wrong answer) */
+  #overlayPage {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    text-align: center;
+    padding: 20px;
+  }
+  #overlayPage.active { display: flex; }
+
+  #overlayPage img {
+    width: min(88vw, 480px);
+    height: min(88vw, 480px);
+    object-fit: cover;
+    border-radius: 6px;
+    box-shadow: 0 0 80px rgba(255,45,85,0.55), 0 0 160px rgba(255,45,85,0.2);
+    animation: glitch 2.5s infinite, zoomPulse 5s ease-in-out infinite;
+  }
+
+  .overlay-title {
+    font-family: 'Creepster', cursive;
+    font-size: clamp(1.8rem, 6vw, 3.2rem);
+    color: var(--accent);
+    margin-top: 26px;
+    animation: flicker 2.2s infinite;
+    text-shadow: 0 0 20px rgba(255,45,85,0.8);
+  }
+
+  .overlay-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: #444;
+    margin-top: 8px;
+    letter-spacing: 0.12em;
+  }
+
+  .continue-btn {
+    margin-top: 28px;
+    background: transparent;
+    color: #555;
+    border: 1px solid #222;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    padding: 10px 22px;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .continue-btn:hover { border-color: #555; color: var(--text); }
+
+  /* GOOD END */
+  #goodPage {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    text-align: center;
+    padding: 30px;
+  }
+  #goodPage.active { display: flex; animation: fadeIn 0.6s ease; }
+
+  .good-emoji { font-size: 4.5rem; margin-bottom: 18px; animation: bounce 1s ease infinite; }
+  .good-title {
+    font-family: 'Creepster', cursive;
+    font-size: clamp(2rem, 7vw, 4rem);
+    color: #30d158;
+    text-shadow: 0 0 30px rgba(48,209,88,0.5);
+    margin-bottom: 14px;
+  }
+  .good-msg {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    color: #888;
+    line-height: 1.9;
+    max-width: 400px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  @keyframes glitch {
+    0%,91%,100% { filter: none; clip-path: inset(0 0 0 0); transform: translate(0); }
+    92% { filter: hue-rotate(90deg) saturate(2); clip-path: inset(8% 0 75% 0); transform: translate(-6px, 0); }
+    93% { clip-path: inset(55% 0 8% 0); transform: translate(6px, 0); filter: hue-rotate(-90deg); }
+    94% { clip-path: inset(25% 0 45% 0); transform: translate(-3px, 0); }
+    95% { clip-path: inset(0 0 0 0); transform: translate(0); filter: none; }
+  }
+  @keyframes zoomPulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  @keyframes flicker {
+    0%,87%,89%,91%,100% { opacity: 1; }
+    88%,90% { opacity: 0.05; }
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+</style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body>
+<div class="noise"></div>
 
-    <header class="bg-[#1a202c] px-4 py-3 border-b border-gray-800 flex justify-between items-center shrink-0">
-        <div class="flex items-center gap-2">
-            <div id="status-led" class="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_8px_red]"></div>
-            <span class="font-bold text-xs uppercase tracking-widest">Node 20 Server</span>
-        </div>
-        <div class="text-[10px] text-gray-500 font-mono">MEM: 128MB / 512MB</div>
-    </header>
+<div id="app">
+  <span class="site-label">is your name its my fake frends list? 🤨</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="question-counter" id="qCounter">Question 1 / 5</div>
+  <div class="question-text" id="qText"></div>
+  <div class="answers-grid" id="answersGrid"></div>
+  <div class="feedback-msg" id="feedbackMsg"></div>
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next →</button>
+</div>
 
-    <nav class="flex bg-[#111827] border-b border-gray-800 shrink-0">
-        <button onclick="switchTab('console')" id="btn-console" class="flex-1 py-4 text-xs font-black active-tab">CONSOLE</button>
-        <button onclick="switchTab('files')" id="btn-files" class="flex-1 py-4 text-xs font-black text-gray-500">FILES</button>
-    </nav>
+<!-- WRONG OVERLAY -->
+<div id="overlayPage">
+  <img src="https://files.catbox.moe/tmk1t1.jpg" alt="">
+  <div class="overlay-title" id="overlayTitle">BUSTED 💀</div>
+  <div class="overlay-sub" id="overlaySub">not daffa. not even close.</div>
+  <button class="continue-btn" id="continueBtn" onclick="dismissOverlay()">ok ok i get it... try again →</button>
+  <audio id="wrongAudio" src="https://files.catbox.moe/1yudo0.aac" loop></audio>
+</div>
 
-    <main class="flex-1 relative overflow-hidden">
-        
-        <div id="tab-console" class="tab-content active p-3">
-            <div class="flex gap-2 mb-3">
-                <button onclick="power('start')" class="flex-1 bg-green-600 py-3 rounded-lg font-bold text-xs shadow-lg active:scale-95 transition-transform">START</button>
-                <button onclick="power('stop')" class="flex-1 bg-red-600 py-3 rounded-lg font-bold text-xs shadow-lg active:scale-95 transition-transform">STOP</button>
-            </div>
-            
-            <div id="out" class="flex-1 terminal-bg rounded-lg border border-gray-700 overflow-y-auto p-3 text-[12px] leading-relaxed text-gray-300">
-                <div class="text-gray-500 italic">Server marked as Offline. Click START to begin.</div>
-            </div>
+<!-- GOOD END -->
+<div id="goodPage">
+  <div class="good-emoji">✨</div>
+  <div class="good-title">YOU PASSED!! 😭</div>
+  <div class="good-msg" id="goodMsg"></div>
+</div>
 
-            <div class="mt-3 flex bg-gray-900 border border-gray-700 p-3 rounded-lg">
-                <span class="text-blue-500 mr-2 font-mono font-bold">❯</span>
-                <input type="text" id="in" class="bg-transparent flex-1 outline-none text-xs font-mono text-white" placeholder="Type a command...">
-            </div>
-        </div>
+<script>
+  const questions = [
+    {
+      q: "What is <span>your friend's</span> name?",
+      answers: ["daffa", "Rizky", "Kevin", "Ahmad", "Budi"],
+      goodMsg: "ok ok!! you know the name 👀 a little suspicious ngl...",
+      wrongTitles: ["WRONG NAME 💀", "WHO?? 🤨", "THAT'S NOT DAFFA!!"],
+      wrongSubs: ["u don't even know their name??", "fake friend confirmed 🚨", "try harder bestie"]
+    },
+    {
+      q: "Your friend texts you. You save their contact as...",
+      answers: ["daffa", "bestie 🥰", "the guy", "idk who dis", "rizky or something"],
+      goodMsg: "U SAVED IT RIGHT!! 😭 ok real one confirmed 🫡",
+      wrongTitles: ["U SAVED IT WRONG 💀", "THEIR NAME IS DAFFA!!", "BESTIE NO 😭"],
+      wrongSubs: ["their name is literally daffa", "save it correctly!!", "💀💀💀"]
+    },
+    {
+      q: "Someone asks: 'who's your friend?' You say...",
+      answers: ["daffa", "some random person", "my uhh.. friend", "i forgot lol", "the one with the hair"],
+      goodMsg: "u said daffa without hesitation!! REAL FRIEND ENERGY ✅",
+      wrongTitles: ["U FORGOT THEIR NAME 🙃", "DISRESPECTFUL 💀", "DAFFA IS HURT RN"],
+      wrongSubs: ["their name is DAFFA 😭", "how did u forget", "daffa deserves better"]
+    },
+    {
+      q: "Fill in the blank: 'My friend's name is ___'",
+      answers: ["daffa", "uhh...", "i think rizky?", "not sure honestly", "can i google it"],
+      goodMsg: "FILLED IT IN PERFECTLY!! daffa would be so proud rn 😤",
+      wrongTitles: ["U BLANKED ON THEIR NAME 😭", "UR NOT THEIR FRIEND", "ITS DAFFA. DAFFA. DAFFA."],
+      wrongSubs: ["the answer was daffa the whole time", "it was always daffa", "go home and think about what u did"]
+    },
+    {
+      q: "last question. 🙂 one final time. spell. their. name.",
+      answers: ["d̵̡̺͚̩͘à̵̧͓͍̩ͅf̷̢͙̻̑f̸͎̾̈́ǎ̸̡̞̥̫", "dapha??", "dappa i think", "deffa maybe", "honestly no idea anymore"],
+      goodMsg: "...you made it. all 5. daffa is real. you are real. you are safe. 🙂\nyou're not on the list. this time.",
+      wrongTitles: ["THE LAST ONE. YOU GOT IT WRONG. 🙂", "AFTER ALL THAT 💀", "GOODBYE BESTIE 👋"],
+      wrongSubs: ["it was always daffa...", "always has been 🌍", "you were never their friend 🙂"]
+    }
+  ];
 
-        <div id="tab-files" class="tab-content p-3">
-            <div class="bg-[#1a202c] border border-gray-700 rounded-t-lg">
-                <div class="p-2 border-b border-gray-700 text-[10px] font-bold text-gray-500 flex justify-between items-center">
-                    /home/container
-                    <button onclick="addFile()" class="bg-blue-600 text-white px-2 py-1 rounded">+ NEW</button>
-                </div>
-                <div id="file-list" class="flex overflow-x-auto p-2 gap-2">
-                    </div>
-            </div>
+  let currentQ = 0;
+  let answered = false;
 
-            <div class="flex-1 bg-black border-x border-gray-700 flex flex-col relative">
-                <div id="ed-name" class="px-3 py-2 text-[11px] bg-gray-900 text-yellow-500 font-mono border-b border-gray-800">Select a file...</div>
-                <textarea id="editor" class="flex-1 bg-transparent text-blue-100 p-4 font-mono text-sm outline-none resize-none" spellcheck="false" placeholder="// Select a file to start coding"></textarea>
-            </div>
+  function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
-            <button onclick="save()" class="bg-blue-500 hover:bg-blue-400 py-4 w-full rounded-b-lg font-black text-sm tracking-widest shadow-[0_-4px_10px_rgba(0,0,0,0.3)] active:bg-blue-300">
-                SAVE FILE
-            </button>
-        </div>
+  function isCorrectAnswer(text) {
+    // Remove zalgo/unicode and check if it's daffa
+    const cleaned = text.replace(/[\u0300-\u036f\u0489]/g, '').toLowerCase();
+    return cleaned === 'daffa';
+  }
 
-    </main>
+  function loadQuestion() {
+    answered = false;
 
-    <script>
-        let files = {
-            'index.js': 'console.log("Initializing Node 20...");\n\nsetTimeout(() => {\n  console.log("Server is now listening on Port 3000");\n}, 1500);',
-            'package.json': '{\n  "name": "ptero-mobile",\n  "version": "1.0.0",\n  "main": "index.js"\n}'
-        };
-        let cur = null;
-        let running = false;
+    const q = questions[currentQ];
+    document.getElementById('qCounter').textContent = `Question ${currentQ + 1} / ${questions.length}`;
+    document.getElementById('qText').innerHTML = q.q;
+    document.getElementById('feedbackMsg').className = 'feedback-msg';
+    document.getElementById('nextBtn').className = 'next-btn';
+    document.getElementById('progressFill').style.width = (currentQ / questions.length * 100) + '%';
 
-        function switchTab(t) {
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-            document.getElementById('tab-'+t).classList.add('active');
-            document.getElementById('btn-console').className = 'flex-1 py-4 text-xs font-black ' + (t=='console'?'active-tab':'text-gray-500');
-            document.getElementById('btn-files').className = 'flex-1 py-4 text-xs font-black ' + (t=='files'?'active-tab':'text-gray-500');
-            if(t=='files') listFiles();
-        }
+    const grid = document.getElementById('answersGrid');
+    grid.innerHTML = '';
 
-        function listFiles() {
-            const l = document.getElementById('file-list');
-            l.innerHTML = '';
-            for(let f in files) {
-                let d = document.createElement('div');
-                d.className = `whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all ${cur === f ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`;
-                d.innerText = f;
-                d.onclick = () => {
-                    cur = f;
-                    document.getElementById('ed-name').innerText = 'Editing: ' + f;
-                    document.getElementById('editor').value = files[f];
-                    listFiles(); // Refresh active state
-                };
-                l.appendChild(d);
-            }
-        }
+    const shuffled = shuffle(q.answers);
+    shuffled.forEach(ans => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = ans;
+      btn.onclick = () => handleAnswer(isCorrectAnswer(ans), btn);
+      grid.appendChild(btn);
+    });
 
-        function save() {
-            if(!cur) return alert('Select a file first!');
-            files[cur] = document.getElementById('editor').value;
-            
-            // Toast notification
-            const btn = document.querySelector('[onclick="save()"]');
-            btn.innerText = "✓ SAVED SUCCESSFULLY";
-            btn.classList.replace('bg-blue-500', 'bg-green-500');
-            setTimeout(() => {
-                btn.innerText = "SAVE FILE";
-                btn.classList.replace('bg-green-500', 'bg-blue-500');
-            }, 1500);
-        }
+    // Fade in
+    document.getElementById('app').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('app').style.transition = 'opacity 0.35s ease';
+      document.getElementById('app').style.opacity = '1';
+    }, 10);
+  }
 
-        function power(s) {
-            const out = document.getElementById('out');
-            const led = document.getElementById('status-led');
-            if(s == 'start') {
-                if(running) return;
-                running = true;
-                led.className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
-                out.innerHTML += `<div class="text-yellow-500 mt-2 font-bold">[SYSTEM] Booting container...</div>`;
-                setTimeout(() => {
-                    out.innerHTML += `<div class="text-green-400 font-mono">container@pteroclone:~# node index.js</div>`;
-                    try {
-                        const code = files['index.js'];
-                        const fakeLog = (...args) => {
-                            out.innerHTML += `<div class="font-mono text-white">${args.join(' ')}</div>`;
-                            out.scrollTop = out.scrollHeight;
-                        };
-                        new Function('console', code)({log: fakeLog});
-                    } catch(e) { out.innerHTML += `<div class="text-red-500 font-bold">${e}</div>`; }
-                }, 1000);
-            } else {
-                running = false;
-                led.className = "w-3 h-3 rounded-full bg-red-600 shadow-[0_0_8px_red]";
-                out.innerHTML += `<div class="text-red-500 mt-2 font-bold">[SYSTEM] Shutdown signal received.</div>`;
-            }
-            out.scrollTop = out.scrollHeight;
-        }
+  function handleAnswer(isCorrect, btn) {
+    if (answered) return;
+    answered = true;
 
-        document.getElementById('in').onkeydown = (e) => {
-            if(e.key == 'Enter') {
-                let v = e.target.value;
-                if(!v) return;
-                document.getElementById('out').innerHTML += `<div class="font-mono"><span class="text-blue-500">❯</span> ${v}</div>`;
-                e.target.value = '';
-                if(v == 'ls') document.getElementById('out').innerHTML += `<div class="text-blue-300">${Object.keys(files).join('  ')}</div>`;
-                if(v == 'clear') document.getElementById('out').innerHTML = '';
-                document.getElementById('out').scrollTop = document.getElementById('out').scrollHeight;
-            }
-        };
+    const allBtns = document.querySelectorAll('.answer-btn');
+    allBtns.forEach(b => { if (b !== btn) b.classList.add('dim'); });
 
-        function addFile() {
-            let n = prompt("File name:");
-            if(n) { files[n] = ""; listFiles(); }
-        }
-    </script>
+    const q = questions[currentQ];
+
+    if (isCorrect) {
+      btn.classList.add('correct');
+      const feedback = document.getElementById('feedbackMsg');
+      feedback.textContent = q.goodMsg;
+      feedback.className = 'feedback-msg good show';
+      document.getElementById('nextBtn').className = 'next-btn show';
+    } else {
+      btn.classList.add('wrong');
+      setTimeout(() => showOverlay(q), 850);
+    }
+  }
+
+  function showOverlay(q) {
+    const titles = q.wrongTitles;
+    const subs = q.wrongSubs;
+    document.getElementById('overlayTitle').textContent = titles[Math.floor(Math.random() * titles.length)];
+    document.getElementById('overlaySub').textContent = subs[Math.floor(Math.random() * subs.length)];
+
+    const isLast = currentQ === questions.length - 1;
+    document.getElementById('continueBtn').textContent = isLast
+      ? '...ok fine 😔 try again'
+      : 'ok ok i get it... try again →';
+
+    const page = document.getElementById('overlayPage');
+    page.style.display = 'flex';
+    page.classList.add('active');
+
+    const audio = document.getElementById('wrongAudio');
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
+
+  function dismissOverlay() {
+    const audio = document.getElementById('wrongAudio');
+    audio.pause();
+    audio.currentTime = 0;
+
+    const page = document.getElementById('overlayPage');
+    page.classList.remove('active');
+    page.style.display = 'none';
+
+    // Stay on same question — they have to answer it again correctly
+    loadQuestion();
+  }
+
+  function nextQuestion() {
+    currentQ++;
+    if (currentQ >= questions.length) {
+      showGoodPage();
+    } else {
+      loadQuestion();
+    }
+  }
+
+  function showGoodPage() {
+    document.getElementById('progressFill').style.width = '100%';
+    const page = document.getElementById('goodPage');
+    document.getElementById('goodMsg').textContent = questions[questions.length - 1].goodMsg;
+    page.style.display = 'flex';
+    page.classList.add('active');
+  }
+
+  loadQuestion();
+</script>
 </body>
 </html>
